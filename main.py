@@ -1,126 +1,141 @@
-import time
+import time as sleepytime
 import datetime
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
 from selenium.webdriver.common.by import By
+import argparse
+from settings import DRIVER_PATH
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import argparse
-from settings import DRIVER_PATH, BASEMENT_URL, FIRST_FLOOR_URL, SECOND_FLOOR_URL, ERNIE_URL
 
+BASE_URL = "https://clubspark.lta.org.uk/MontpellierGardens/Booking/BookByDate"
 
 def get_driver_path():
     if(DRIVER_PATH):
         return DRIVER_PATH
     else:
-        raise Exception("You need to set the chrome driver path in the DRIVER_PATH environment variable.")
+        # raise Exception("You need to set the chrome driver path in the DRIVER_PATH environment variable.")
+        return "C:/Users/Ronan/Booking Bot/geckodriver.exe"#"C:/Users/Ronan/Booking Bot/chromedriver.exe"
 
-def get_floor_url(floor):
-    if floor == 'basement':
-        if(BASEMENT_URL):
-            return BASEMENT_URL
-        else:
-            raise Exception("You need to set the basement floor url in the BASEMENT_URL environment variable.")
-    elif floor == 'second':
-        if(SECOND_FLOOR_URL):
-            return SECOND_FLOOR_URL
-        else:
-            raise Exception("You need to set the second floor url in the SECOND_FLOOR_URL environment variable.")
-    elif floor == 'first':
-        if(FIRST_FLOOR_URL):
-            return FIRST_FLOOR_URL
-        else:
-            raise Exception("You need to set the first floor url in the FIRST_FLOOR_URL environment variable.")
-    elif floor == 'ernie':
-        if(ERNIE_URL):
-            return ERNIE_URL
-        else:
-            raise Exception("You need to set the first floor url in the ERNIE_URL environment variable.")
-    else:
-        raise Exception("{} is not a viable floor option.".format(floor))
+def get_day_url(day):
+    return BASE_URL + '#' + f'?date={day}&role=member'
 
+def login(u, pw, browser):
+    sleepytime.sleep(3)
+    #sign_in = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "sign-in")))
+    sign_in = browser.find_element_by_class_name("sign-in")
+    sign_in.click()
+    
+    sleepytime.sleep(0.2)
+    #find the username and password box
+    username = browser.find_element_by_name("EmailAddress")
+    username_str = u
+    username.send_keys(username_str)
 
+    password = browser.find_element_by_name("Password")
+    password_str = pw
+    password.send_keys(password_str)
 
-def main(u, pw, floor, gym_time):
+    browser.find_element_by_id("signin-btn").click()
+
+def convert_time_to_id(time = '10:00'):
+    return int(time[:2])*60 + int(time[3:])
+    
+    
+def book_slot(court, day, time, browser, hour = False):
+    print(get_day_url(day))
+    print(convert_time_to_id(time))
+    browser.get(get_day_url(day))
+    sleepytime.sleep(1)
+    court_obj = browser.find_element(By.XPATH, f"//div[@data-resource-name='Court {court}']")
+    slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
+    slot.click()
+    popup = browser.find_element(By.XPATH, "//form[@action='Book']")
+    
+    if hour == True:
+        #this bit selects the full hour
+        select = popup.find_element(By.XPATH, ".//span[@class='select2-selection__arrow']")
+        sleepytime.sleep(1)
+        select.click()
+        
+        select = popup.find_element(By.XPATH, ".//span[@class='selection']")
+        select_dropdown = select.find_element(By.XPATH, ".//span[@aria-expanded='true']")
+        select_dropdown.send_keys(Keys.DOWN)
+        
+        select_dropdown.send_keys(Keys.RETURN)
+        
+    sleepytime.sleep(1)
+    #press the continue button
+    popup.find_element_by_id("submit-booking").click()
+    
+
+def confirm(browser):
+    sleepytime.sleep(1)
+    browser.find_element_by_id('confirm').click()
+    
+    
+    
+def main(u, pw, day, court):
     t = datetime.datetime.now()
-    print('[STARTING] Signing up for {} gym slot on {} at {}'.format(gym_time, t.strftime('%m:%d'), t.strftime('%H:%M')))
+    print(f'[STARTING] Signing up for court {court} on {day}')
 
-    options = webdriver.ChromeOptions()
-    options.add_argument('headless') # comment out to toggle headless mode
-
-    driver = webdriver.Chrome(get_driver_path(), options=options)
-    driver.get(get_floor_url(floor))
+    s=Service(get_driver_path())
+    browser = webdriver.Firefox(service = s) #webdriver.Chrome(service=s)
     
-    login(u, pw, driver)
-
-    register(gym_time, driver)
+    #make full screen
+    browser.find_element_by_xpath('/html/body').send_keys(Keys.F11)
     
-    checkout(driver)
-
-    print("[SUCCESS] Signed up for {} floor at {}".format(floor, gym_time))
+    browser.get(BASE_URL)
     
-    time.sleep(60)
-
-def login(u, pw, driver):
-    driver.find_element_by_xpath("//*[@id='loginLink']").click()
-
-    WebDriverWait(driver, 1).until(
-        EC.element_to_be_clickable((By.XPATH, "//*[@id='divLoginOptions']/div[2]/div[2]/div/button"))
-    ).click()
-
-    WebDriverWait(driver, 2).until(
-        EC.element_to_be_clickable((By.ID, 'username'))
-    ).send_keys(u)
-
-    driver.find_element_by_id('password').send_keys(pw)
-
-    driver.find_element_by_css_selector('button.form-element.form-button').click()
-
-def register(gym_time, driver):
-    # Converts from military time and removes any leading '0's
-    if (gym_time[0] == '0'):
-        gym_time = gym_time[1:]
-    elif (int(gym_time[:2]) > 12):
-        gym_time = str(int(gym_time[:2]) - 12) + gym_time[2:]
-
+    
+    login(u, pw, browser)
+    sleepytime.sleep(2)
+    
+    
+    #have to wait until it actually logs in 
+    #element = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "carousel")))
+    print(get_day_url)
+    
     try:
-        # Selects gym slot register button with corresponding time
-        WebDriverWait(driver, 1).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='mainContent']/div[2]/section/div/div/div/div[1]/small[contains(text(), '{}')]/../../div[2]/button".format(gym_time)))
-        ).click()
+        #think I need to scroll down the page otherwise the cookie notice blocks me
+        book_slot(court, day, '07:00', browser, hour = True)
+        #confirm(browser)
     except:
-        raise Exception('The gym time slot {} is unavailable.'.format(gym_time))
-
-def checkout(driver):
-    try:
-        WebDriverWait(driver, 1).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='btnAccept']"))
-        ).click()
-    except:
-        print('Failed to click accept button on first attempt')
-        time.sleep(1)
-        WebDriverWait(driver, 1).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='btnAccept']"))
-        ).click()
-
-    WebDriverWait(driver, 60).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='checkoutButton']"))
-        ).click()
+        #browser.close()
+        raise Exception("failed to book")
     
-    WebDriverWait(driver, 1).until(
-        EC.element_to_be_clickable((By.XPATH, "//*[@id='CheckoutModal']/div/div[2]/button[2]"))
-    ).click()
+    sleepytime.sleep(1)
+    
+    try:
+        #think I need to scroll down the page otherwise the cookie notice blocks me
+        book_slot(court, day, '08:00', browser, hour = False)
+        #confirm(browser)
+    except:
+        browser.close()
+        raise Exception("failed to book")
+    
+    
 
+    print(f"[SUCCESS] Signed up for court {court}")
+    
+    sleepytime.sleep(2)
+
+    browser.close()
+    
 if __name__ == "__main__":
+    print('doing a thing')
     parser = argparse.ArgumentParser()
 
     parser.add_argument('u', type=str, help='Username')
     parser.add_argument('pw', type=str, help='Password')
-    parser.add_argument('floor', type=str, help='Select the gym floor you want')
-    parser.add_argument('time',  type=str, help='Select the gym time you want')
+    parser.add_argument('court',  type=int, help='Select the court you want')
+    parser.add_argument('day',  type=str, help='Select the day you want to book')
 
     args = parser.parse_args()
 
-    main(args.u, args.pw, args.floor, args.time)
+    main(args.u, args.pw, args.day, args.court)
 
 
 
