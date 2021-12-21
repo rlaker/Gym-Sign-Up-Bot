@@ -9,15 +9,18 @@ import argparse
 from settings import DRIVER_PATH
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import io
 
-BASE_URL = "https://clubspark.lta.org.uk/MontpellierGardens/Booking/BookByDate"
+with io.open("url.txt", encoding="utf-8") as f:
+    BASE_URL = f.read()
 
 def get_driver_path():
     if(DRIVER_PATH):
         return DRIVER_PATH
     else:
         # raise Exception("You need to set the chrome driver path in the DRIVER_PATH environment variable.")
-        return "C:/Users/Ronan/Booking Bot/geckodriver.exe"#"C:/Users/Ronan/Booking Bot/chromedriver.exe"
+        with io.open("driver_path.txt", encoding="utf-8") as f:
+            return f.read()
 
 def get_day_url(day):
     return BASE_URL + '#' + f'?date={day}&role=member'

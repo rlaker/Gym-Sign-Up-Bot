@@ -3,3 +3,4 @@ main.bat
 scheduler_2.py
 /__pycache__
 /.vscode
+**/*.txt
