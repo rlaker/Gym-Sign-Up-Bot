@@ -2,7 +2,6 @@ import time as sleepytime
 import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import argparse
@@ -10,6 +9,8 @@ from settings import DRIVER_PATH
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import io
+from webdriver_manager.firefox import GeckoDriverManager
+
 
 with io.open("url.txt", encoding="utf-8") as f:
     BASE_URL = f.read()
@@ -51,7 +52,7 @@ def book_slot(court, day, time, browser, hour = False):
     print(get_day_url(day))
     print(convert_time_to_id(time))
     browser.get(get_day_url(day))
-    sleepytime.sleep(1)
+    sleepytime.sleep(2)
     court_obj = browser.find_element(By.XPATH, f"//div[@data-resource-name='Court {court}']")
     slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
     slot.click()
@@ -83,12 +84,11 @@ def confirm(browser):
 def main(u, pw, day, court):
     t = datetime.datetime.now()
     print(f'[STARTING] Signing up for court {court} on {day}')
-
-    s=Service(get_driver_path())
-    browser = webdriver.Firefox(service = s) #webdriver.Chrome(service=s)
+    print(get_driver_path())
+    # s=Service(get_driver_path())
     
-    #make full screen
-    browser.find_element_by_xpath('/html/body').send_keys(Keys.F11)
+    browser = webdriver.Firefox(executable_path=GeckoDriverManager().install())
+    #browser = webdriver.Firefox(executable_path=get_driver_path()) #webdriver.Chrome(service=s)
     
     browser.get(BASE_URL)
     
