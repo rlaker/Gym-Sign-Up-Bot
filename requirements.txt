@@ -20,6 +20,7 @@ selenium
 six==1.15.0
 toml==0.10.2
 urllib3
+webdriver-manager
 win-inet-pton
 wincertstore==0.2
 wrapt==1.12.1
