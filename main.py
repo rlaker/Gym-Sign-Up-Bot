@@ -29,20 +29,20 @@ def get_day_url(day):
 def login(u, pw, browser):
     sleepytime.sleep(3)
     #sign_in = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "sign-in")))
-    sign_in = browser.find_element_by_class_name("sign-in")
+    sign_in = browser.find_element(By.CLASS_NAME,"sign-in")
     sign_in.click()
     
     sleepytime.sleep(0.2)
     #find the username and password box
-    username = browser.find_element_by_name("EmailAddress")
+    username = browser.find_element(By.NAME, "EmailAddress")
     username_str = u
     username.send_keys(username_str)
 
-    password = browser.find_element_by_name("Password")
+    password = browser.find_element(By.NAME, "Password")
     password_str = pw
     password.send_keys(password_str)
 
-    browser.find_element_by_id("signin-btn").click()
+    browser.find_element(By.ID, "signin-btn").click()
 
 def convert_time_to_id(time = '10:00'):
     return int(time[:2])*60 + int(time[3:])
@@ -72,12 +72,12 @@ def book_slot(court, day, time, browser, hour = False):
         
     sleepytime.sleep(1)
     #press the continue button
-    popup.find_element_by_id("submit-booking").click()
+    popup.find_element(By.ID, "submit-booking").click()
     
 
 def confirm(browser):
     sleepytime.sleep(1)
-    browser.find_element_by_id('confirm').click()
+    browser.find_element(By.ID, 'confirm').click()
     
     
     
