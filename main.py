@@ -27,9 +27,9 @@ def get_day_url(day):
     return BASE_URL + '#' + f'?date={day}&role=member'
 
 def login(u, pw, browser):
-    sleepytime.sleep(3)
-    #sign_in = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "sign-in")))
-    sign_in = browser.find_element(By.CLASS_NAME,"sign-in")
+    # sleepytime.sleep(3)
+    #sign_in = browser.find_element(By.CLASS_NAME,"sign-in")
+    sign_in = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.CLASS_NAME, "sign-in")))
     sign_in.click()
     
     sleepytime.sleep(0.2)
@@ -52,33 +52,34 @@ def book_slot(court, day, time, browser, hour = False):
     print(get_day_url(day))
     print(convert_time_to_id(time))
     browser.get(get_day_url(day))
-    sleepytime.sleep(2)
-    court_obj = browser.find_element(By.XPATH, f"//div[@data-resource-name='Court {court}']")
+    # sleepytime.sleep(2)
+    # court_obj = browser.find_element(By.XPATH, f"//div[@data-resource-name='Court {court}']")
+    
+    court_obj = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH, f"//div[@data-resource-name='Court {court}']")))
     slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
-    slot.click()
-    popup = browser.find_element(By.XPATH, "//form[@action='Book']")
+    WebDriverWait(browser, 5).until(EC.element_to_be_clickable(slot)).click()
+    
+    popup = WebDriverWait(browser, 5).until(EC.visibility_of_element_located((By.XPATH, "//form[@action='Book']")))
     
     if hour == True:
         #this bit selects the full hour
-        select = popup.find_element(By.XPATH, ".//span[@class='select2-selection__arrow']")
-        sleepytime.sleep(1)
+        select = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.XPATH, ".//span[@class='select2-selection__arrow']")))
         select.click()
         
-        select = popup.find_element(By.XPATH, ".//span[@class='selection']")
-        select_dropdown = select.find_element(By.XPATH, ".//span[@aria-expanded='true']")
+        select = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.XPATH, ".//span[@class='selection']")))
+        
+        select_dropdown = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(select.find_element(By.XPATH, ".//span[@aria-expanded='true']")))
         select_dropdown.send_keys(Keys.DOWN)
         
         select_dropdown.send_keys(Keys.RETURN)
         
-    sleepytime.sleep(1)
+    
     #press the continue button
-    popup.find_element(By.ID, "submit-booking").click()
+    WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.ID, "submit-booking"))).click()
     
 
 def confirm(browser):
-    sleepytime.sleep(1)
-    browser.find_element(By.ID, 'confirm').click()
-    
+    WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, 'confirm'))).click()  
     
     
 def main(u, pw, day, court):
@@ -94,11 +95,7 @@ def main(u, pw, day, court):
     
     
     login(u, pw, browser)
-    sleepytime.sleep(2)
     
-    
-    #have to wait until it actually logs in 
-    #element = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "carousel")))
     print(get_day_url)
     
     try:
@@ -108,8 +105,6 @@ def main(u, pw, day, court):
     except:
         #browser.close()
         raise Exception("failed to book")
-    
-    sleepytime.sleep(1)
     
     try:
         #think I need to scroll down the page otherwise the cookie notice blocks me
