@@ -5,16 +5,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import argparse
-from settings import DRIVER_PATH
+from settings import DRIVER_PATH, URL
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import io
 from webdriver_manager.firefox import GeckoDriverManager
-from datetime import datetime
 from selenium.common import exceptions as exc
-
-with io.open("url.txt", encoding="utf-8") as f:
-    BASE_URL = f.read()
 
 def get_driver_path():
     if(DRIVER_PATH):
@@ -25,7 +21,7 @@ def get_driver_path():
             return f.read()
 
 def get_day_url(day):
-    return BASE_URL + '#' + f'?date={day}&role=member'
+    return URL + '#' + f'?date={day}&role=member'
 
 def login(u, pw, browser):
     # sleepytime.sleep(3)
@@ -141,13 +137,12 @@ def confirm(browser):
 def main(u, pw, day, court, wait_midnight = False):
     t = datetime.datetime.now()
     print(f'[STARTING] Signing up for court {court} on {day}')
-    print(get_driver_path())
     # s=Service(get_driver_path())
     
     browser = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     #browser = webdriver.Firefox(executable_path=get_driver_path()) #webdriver.Chrome(service=s)
     
-    browser.get(BASE_URL)
+    browser.get(URL)
     
     
     login(u, pw, browser)
@@ -156,20 +151,20 @@ def main(u, pw, day, court, wait_midnight = False):
     
     if wait_midnight:
         #wait until midnight
-        time  = datetime.now()
+        time  = datetime.datetime.now()
         counter = 0
         print(f"Started waiting at {time}")
-        while time < datetime(time.year, time.month, time.day+1,0,0):#start of the next day
+        while time < datetime.datetime(time.year, time.month, time.day+1,0,0):#start of the next day
             if counter == 10:
                 print(time)
                 counter = 0
                 
-            time  = datetime.now()
+            time  = datetime.datetime.now()
             sleepytime.sleep(0.5)
             counter += 1
     
     #wait an extra 0.5 seconds before loading the page again
-    time.sleep(0.5)
+    sleepytime.sleep(0.5)
     
     #wait for the slot to become bookable
     
