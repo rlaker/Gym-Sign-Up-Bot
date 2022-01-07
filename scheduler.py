@@ -3,26 +3,20 @@ import datetime
 import argparse
 from settings import USERNAME, PASSWORD
 
-def get_username():
-    if(USERNAME):
-        return USERNAME
-    else:
-        raise Exception("You need to set your username in the USERNAME environment variable.")
-
-def get_password():
-    if(PASSWORD):
-        return PASSWORD
-    else:
-        raise Exception("You need to set your password in the PASSWORD environment variable.")
+def make_bat(u, pw, day, court):
+    txt = "\"C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe\" \"C:\\Users\\Ronan\\Booking Bot\\Gym-Sign-Up-Bot\\main.py\" \"{}\" \"{}\" \"{}\" {}".format(u, pw, day, court) + ' pause'
+    with open(f'book_{day}_{court}.bat', 'w') as output:
+        output.write(txt)
 
 def scheduler(u, pw, day, court, st):
     scheduler = win32com.client.Dispatch('Schedule.Service')
     scheduler.Connect()
     root_folder = scheduler.GetFolder('\\')
+    print(f"root folder is {root_folder}")
     new_task = scheduler.NewTask(0)
     
-    task_name = "Gym sign up {}".format(st.strftime('%m-%d'))
-    print("[CREATING] Scheduling task named '{}'".format(task_name))
+    task_name = f"Tennis booker {day}"
+    print(f"[CREATING] Scheduling task named {task_name}")
 
     TASK_TRIGGER_TIME = 1
     trigger = new_task.Triggers.Create(TASK_TRIGGER_TIME)
@@ -31,10 +25,14 @@ def scheduler(u, pw, day, court, st):
     TASK_ACTION_EXEC = 0
     action = new_task.Actions.Create(TASK_ACTION_EXEC)
     action.ID = 'DO NOTHING'
-    action.Path = "C:\\Users\\Tjmon\\anaconda3\\python.exe" # path of python interpreter
-    action.Arguments = "C:\\Users\\Tjmon\\OneDrive\\Desktop\\Gym-Sign-Up-Bot-Project\\main.py {} {} {} {}".format(u, pw, floor, t) # args for python interpreter
+    
+    # path of python interpreter
+    action.Path = "C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe" 
+    
+    
+    action.Arguments = "C:\\Users\\Ronan\\Booking Bot\\Gym-Sign-Up-Bot\\main.py {} {} {} {}".format(u, pw, day, court) # args for python interpreter
 
-    new_task.RegistrationInfo.Description = "Gym sign up"
+    new_task.RegistrationInfo.Description = "Tennis Booking"
     new_task.Settings.Enabled = True
     new_task.Settings.StopIfGoingOnBatteries = False
     new_task.Settings.DisallowStartIfOnBatteries = False
@@ -50,7 +48,9 @@ def scheduler(u, pw, day, court, st):
         '',  # No password
         TASK_LOGON_NONE)
 
-    print('[SUCCESS] Created gym sign up for {} on {}'.format(t, st.strftime('%m/%d')))
+    print(f'[SUCCESS] Created gym sign up for {day}')
+    
+    return new_task
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -63,23 +63,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cur_time = datetime.datetime.now()
-    
-    #this needs to be changed to midnight on the sunday
-    #decide if you want to want to just run this schedular on the day
-    start_task_hour = int(args.t[:2]) - 6
-    start_task_minutes = int(args.t[3:])
-    
+        
     #decide how to handle the day argument too
-    #check it is 4 weeks ahead
-    if(not args.d):
-        # If its past the six hours in advance of the gym slot opening, set the date to the next day
-        if(start_task_hour < cur_time.hour):
-            start_time = datetime.datetime(cur_time.year, cur_time.month, cur_time.day+1, start_task_hour, start_task_minutes)
-        elif(start_task_hour == cur_time.hour and start_task_minutes < cur_time.minute):
-            start_time = datetime.datetime(cur_time.year, cur_time.month, cur_time.day+1, start_task_hour, start_task_minutes) 
-        else: 
-            start_time = datetime.datetime(cur_time.year, cur_time.month, cur_time.day, start_task_hour, start_task_minutes)
-    else:
-        start_time = datetime.datetime(int(args.d[6:]), int(args.d[:2]), int(args.d[3:5]), start_task_hour, start_task_minutes)
+    
+    #this script will run on Saturday at 23:58
+    #so the booking day is 29 days in the future  
+    booking_day = cur_time + datetime.timedelta(days = 29)
+    #check that booking day matches the user inputted day
+    if booking_day.strftime("%Y-%m-%d") != args.day:
+        raise Exception("Booking and inputted day do not match")
+    
+    start_time = cur_time.replace(hour = 23, minute = 58)
 
     scheduler(args.u, args.pw, args.day, args.court, start_time)
