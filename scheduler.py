@@ -4,7 +4,7 @@ import argparse
 from settings import USERNAME, PASSWORD
 
 def make_bat(u, pw, day, court):
-    txt = "\"C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe\" \"C:\\Users\\Ronan\\Booking Bot\\Gym-Sign-Up-Bot\\main.py\" \"{}\" \"{}\" \"{}\" {}".format(u, pw, day, court) + ' pause'
+    txt = "\"C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe\" \"C:\\Users\\Ronan\\Booking Bot\\Gym-Sign-Up-Bot\\main.py\" \"{}\" \"{}\" \"{}\" {}".format(u, pw, day, court)
     with open(f'book_{day}_{court}.bat', 'w') as output:
         output.write(txt)
 
