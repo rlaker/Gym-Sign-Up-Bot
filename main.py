@@ -10,7 +10,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import io
 from webdriver_manager.firefox import GeckoDriverManager
-
+from datetime import datetime
+from selenium.common import exceptions as exc
 
 with io.open("url.txt", encoding="utf-8") as f:
     BASE_URL = f.read()
@@ -43,28 +44,83 @@ def login(u, pw, browser):
     password.send_keys(password_str)
 
     browser.find_element(By.ID, "signin-btn").click()
+    
+    
 
 def convert_time_to_id(time = '10:00'):
     return int(time[:2])*60 + int(time[3:])
     
     
+def is_slot_bookable(slot):
+    try:
+        #if the slot is bookable then 
+        slot.find_element(By.XPATH, ".//a[@class='book-interval not-booked']")
+        return 'available'  
+    except exc.NoSuchElementException as e:
+        # print('It is not available')
+        pass
+    
+    try:
+        #search for the unavailable class
+        slot.find_element(By.CLASS_NAME, "unavailable")
+        return 'unavailable'
+    
+    except exc.NoSuchElementException as e:
+        # print("It is not unavailable")
+        pass
+    
+    try:
+        slot.find_element(By.XPATH, ".//a[@class='edit-booking']")
+        return 'booked'
+    
+    except exc.NoSuchElementException as e:
+        pass
+    
+    raise Exception("It is none of these options")
+
 def book_slot(court, day, time, browser, hour = False):
-    print(get_day_url(day))
-    print(convert_time_to_id(time))
+    # print(get_day_url(day))
+    # print(convert_time_to_id(time))
     browser.get(get_day_url(day))
-    # sleepytime.sleep(2)
+    sleepytime.sleep(2)
     # court_obj = browser.find_element(By.XPATH, f"//div[@data-resource-name='Court {court}']")
     
     court_obj = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH, f"//div[@data-resource-name='Court {court}']")))
+    #this finds the div of the right slot
     slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
+    
+    refresh_count = 0
+    while is_slot_bookable(slot) == 'unavailable' and refresh_count < 10:
+        print("Unavailable, refreshing the page after 5 secs")
+        sleepytime.sleep(5)
+        
+        #reload the page and try again 
+        browser.refresh()
+        refresh_count += 1
+        
+        #have to refind the slots
+        court_obj = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH, f"//div[@data-resource-name='Court {court}']")))
+        #this finds the div of the right slot
+        slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
+        
+    answer = is_slot_bookable(slot)
+    print(answer)
+    if answer == 'unavailable':
+        raise Exception("Still not available after refreshing")
+    elif answer == 'booked':
+        #this slot is already booked 
+        raise Exception(f"Already booked!\n{get_day_url(day)}")
+    elif answer == 'available':
+        pass
+    
+    WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable(slot)).click()
     
     popup = WebDriverWait(browser, 5).until(EC.visibility_of_element_located((By.XPATH, "//form[@action='Book']")))
     
     if hour == True:
         #this bit selects the full hour
-        select = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.XPATH, ".//span[@class='select2-selection__arrow']")))
-        select.click()
+        select = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.XPATH, ".//span[@class='select2-selection__arrow']"))).click()
         
         select = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.XPATH, ".//span[@class='selection']")))
         
@@ -82,7 +138,7 @@ def confirm(browser):
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, 'confirm'))).click()  
     
     
-def main(u, pw, day, court):
+def main(u, pw, day, court, wait_midnight = False):
     t = datetime.datetime.now()
     print(f'[STARTING] Signing up for court {court} on {day}')
     print(get_driver_path())
@@ -98,17 +154,36 @@ def main(u, pw, day, court):
     
     print(get_day_url)
     
+    if wait_midnight:
+        #wait until midnight
+        time  = datetime.now()
+        counter = 0
+        print(f"Started waiting at {time}")
+        while time < datetime(time.year, time.month, time.day+1,0,0):#start of the next day
+            if counter == 10:
+                print(time)
+                counter = 0
+                
+            time  = datetime.now()
+            sleepytime.sleep(0.5)
+            counter += 1
+    
+    #wait an extra 0.5 seconds before loading the page again
+    time.sleep(0.5)
+    
+    #wait for the slot to become bookable
+    
     try:
-        #think I need to scroll down the page otherwise the cookie notice blocks me
         book_slot(court, day, '07:00', browser, hour = True)
+        #make sure you comment this line out when testing
         #confirm(browser)
     except:
         #browser.close()
         raise Exception("failed to book")
     
     try:
-        #think I need to scroll down the page otherwise the cookie notice blocks me
         book_slot(court, day, '08:00', browser, hour = False)
+        #make sure you comment this line out when testing
         #confirm(browser)
     except:
         browser.close()
