@@ -15,7 +15,7 @@ def get_password():
     else:
         raise Exception("You need to set your password in the PASSWORD environment variable.")
 
-def scheduler(u, pw, floor, t, st):
+def scheduler(u, pw, day, court, st):
     scheduler = win32com.client.Dispatch('Schedule.Service')
     scheduler.Connect()
     root_folder = scheduler.GetFolder('\\')
@@ -55,19 +55,22 @@ def scheduler(u, pw, floor, t, st):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-t', type=str, help='Gym slot starting time in format 00:00')
-    parser.add_argument('--d', type=str, help='Gym slot date in format 00/00/0000')
-    parser.add_argument('--u', default=get_username(), type=str, help='Username')
-    parser.add_argument('--pw' , default=get_password(), type=str, help='Password')
-    parser.add_argument('--flr', default='basement', type=str, help='Select the gym floor you want')
+    parser.add_argument('u', type=str, help='Username')
+    parser.add_argument('pw', type=str, help='Password')
+    parser.add_argument('day',  type=str, help='Date in YYYY-MM-DD format')
+    parser.add_argument('court',  type=int, help='Select the court you want')
     
     args = parser.parse_args()
 
     cur_time = datetime.datetime.now()
     
+    #this needs to be changed to midnight on the sunday
+    #decide if you want to want to just run this schedular on the day
     start_task_hour = int(args.t[:2]) - 6
     start_task_minutes = int(args.t[3:])
     
+    #decide how to handle the day argument too
+    #check it is 4 weeks ahead
     if(not args.d):
         # If its past the six hours in advance of the gym slot opening, set the date to the next day
         if(start_task_hour < cur_time.hour):
@@ -79,4 +82,4 @@ if __name__ == "__main__":
     else:
         start_time = datetime.datetime(int(args.d[6:]), int(args.d[:2]), int(args.d[3:5]), start_task_hour, start_task_minutes)
 
-    scheduler(args.u, args.pw, args.flr, args.t, start_time)
+    scheduler(args.u, args.pw, args.day, args.court, start_time)
