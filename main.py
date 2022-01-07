@@ -29,12 +29,12 @@ def get_day_url(day):
 def login(u, pw, browser):
     # sleepytime.sleep(3)
     #sign_in = browser.find_element(By.CLASS_NAME,"sign-in")
-    sign_in = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.CLASS_NAME, "sign-in")))
-    sign_in.click()
+    WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
+    WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, "Login"))).click()
     
     sleepytime.sleep(0.2)
     #find the username and password box
-    username = browser.find_element(By.NAME, "EmailAddress")
+    username = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.NAME, "EmailAddress")))
     username_str = u
     username.send_keys(username_str)
 
@@ -128,8 +128,8 @@ if __name__ == "__main__":
 
     parser.add_argument('u', type=str, help='Username')
     parser.add_argument('pw', type=str, help='Password')
-    parser.add_argument('court',  type=int, help='Select the court you want')
     parser.add_argument('day',  type=str, help='Select the day you want to book')
+    parser.add_argument('court',  type=int, help='Select the court you want')
 
     args = parser.parse_args()
 
