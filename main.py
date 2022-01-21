@@ -12,20 +12,22 @@ from webdriver_manager.firefox import GeckoDriverManager
 from selenium.common import exceptions as exc
 from selenium.webdriver.firefox.service import Service  
 
-def get_driver_path():
-    if(DRIVER_PATH):
-        return DRIVER_PATH
-    else:
-        # raise Exception("You need to set the chrome driver path in the DRIVER_PATH environment variable.")
-        with io.open("driver_path.txt", encoding="utf-8") as f:
-            return f.read()
-
 def get_day_url(day):
+    """returns the url for the right day"""
     return URL + '#' + f'?date={day}&role=member'
 
 def login(u, pw, browser):
-    # sleepytime.sleep(3)
-    #sign_in = browser.find_element(By.CLASS_NAME,"sign-in")
+    """Login the user
+
+    Parameters
+    ----------
+    u : str
+        username
+    pw : str
+        password
+    browser : browser object
+    """
+    #click the login button
     WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, "Login"))).click()
     
@@ -33,21 +35,46 @@ def login(u, pw, browser):
     #find the username and password box
     username = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.NAME, "EmailAddress")))
     username_str = u
+    #send the username str
     username.send_keys(username_str)
 
+    #find the password element
     password = browser.find_element(By.NAME, "Password")
     password_str = pw
     password.send_keys(password_str)
 
+    # click the sign in button
     browser.find_element(By.ID, "signin-btn").click()
-    
-    
 
 def convert_time_to_id(time = '10:00'):
+    """Converts a time string to the number format used in the website
+
+    Parameters
+    ----------
+    time : str, optional
+        Time to convert, by default '10:00'
+
+    Returns
+    -------
+    int
+        Minutes since midnight, which is what the page uses
+    """
     return int(time[:2])*60 + int(time[3:])
     
     
 def is_slot_bookable(slot):
+    """Checks if slot if bookable by looking at the text in the slot elements
+
+    Parameters
+    ----------
+    slot : slot object
+        slot object after finding through selenium
+
+    Returns
+    -------
+    str
+
+    """
     try:
         #if the slot is bookable then 
         slot.find_element(By.XPATH, ".//a[@class='book-interval not-booked']")
@@ -74,19 +101,54 @@ def is_slot_bookable(slot):
     
     raise Exception("It is none of these options")
 
+class AlreadyBooked(Exception):
+    """Class for case when court is already booked"""
+    def __init__(self, url):
+        self.url = url
+        
+    def __str__(self):
+        return f"Still not available after refreshing {self.max_refresh} times"
+    
+    
+class Unavailable(Exception):
+    """Class for case when court is already booked"""
+    def __init__(self, max_refresh):
+        self.max_refresh = max_refresh
+        
+    def __str__(self):
+        return f"Already booked!\nGo and check: {self.url}"
+
 def book_slot(court, day, time, browser, hour = False):
-    # print(get_day_url(day))
-    # print(convert_time_to_id(time))
+    """Finds the right court and books it.
+
+    Parameters
+    ----------
+    court : int
+        Court number
+    day : str
+        Date to book in YY-MM-DD format
+    time : str
+        time to book in HH-MM
+    browser : browser object
+        browser object
+    hour : bool, optional
+        If True will book court for an hour, by default False
+
+    """
+    
+    #Go to the correct date url
     browser.get(get_day_url(day))
     sleepytime.sleep(2)
-    # court_obj = browser.find_element(By.XPATH, f"//div[@data-resource-name='Court {court}']")
     
+    #find the court to book
     court_obj = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH, f"//div[@data-resource-name='Court {court}']")))
     #this finds the div of the right slot
     slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
     
+    #if slot is unavailable then it is not ready to book yet, so try max_refresh times.
     refresh_count = 0
-    while is_slot_bookable(slot) == 'unavailable' and refresh_count < 10:
+    max_refresh = 20
+    while is_slot_bookable(slot) == 'unavailable' and refresh_count < max_refresh:
         print("Unavailable, refreshing the page after 5 secs")
         sleepytime.sleep(5)
         
@@ -100,20 +162,20 @@ def book_slot(court, day, time, browser, hour = False):
         slot = court_obj.find_element(By.XPATH, f".//div[@data-system-start-time='{convert_time_to_id(time)}']")
         
     answer = is_slot_bookable(slot)
-    print(answer)
     if answer == 'unavailable':
-        raise Exception("Still not available after refreshing")
+        raise Unavailable(max_refresh)
+    
     elif answer == 'booked':
         #this slot is already booked 
-        raise Exception(f"Already booked!\n{get_day_url(day)}")
-    elif answer == 'available':
-        pass
+        raise AlreadyBooked(get_day_url(day))
     
     WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable(slot)).click()
     
+    #click on the slot which brings up a pop-up
     popup = WebDriverWait(browser, 5).until(EC.visibility_of_element_located((By.XPATH, "//form[@action='Book']")))
     
+    #if hour is true we need to choose from dropdown menu
     if hour == True:
         #this bit selects the full hour
         select = WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.XPATH, ".//span[@class='select2-selection__arrow']"))).click()
@@ -131,9 +193,25 @@ def book_slot(court, day, time, browser, hour = False):
     
 
 def confirm(browser):
+    """Clicks the confirm button"""
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, 'confirm'))).click()  
     
 def get_default_target_date():
+    """Gets the target date for the default.
+
+    Returns
+    -------
+    str
+        Target date to book
+
+    Raises
+    ------
+    Exception
+        If script not started on a Saturday
+    Exception
+        If target day is not a Sunday
+    """
+    
     weekday_dic = {1: 'Monday',
                2: 'Tuesday',
                3: 'Wednesday',
@@ -265,7 +343,6 @@ def main(u, pw, day, court, time, wait_midnight = False):
     browser.close()
     
 if __name__ == "__main__":
-    print('doing a thing')
     parser = argparse.ArgumentParser()
 
     parser.add_argument('u', type=str, help='Username')
