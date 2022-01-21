@@ -223,7 +223,7 @@ def get_default_target_date():
     # the script will start running on saturday night, so the weekday should be 6
     # but our target date is in 29 days time - and should be a sunday
     script_start_date = datetime.now()
-    if script_start_date.isocalendar().weekday == 5:
+    if script_start_date.isocalendar().weekday == 6:
         #29 because the script started on saturday, but want to book when turns midnight and becomes sunday
         target_date = script_start_date + timedelta(days = 29)
         
