@@ -103,8 +103,8 @@ def is_slot_bookable(slot):
 
 class AlreadyBooked(Exception):
     """Class for case when court is already booked"""
-    def __init__(self, url):
-        self.url = url
+    def __init__(self, max_refresh):
+        self.max_refresh = max_refresh
         
     def __str__(self):
         return f"Still not available after refreshing {self.max_refresh} times"
