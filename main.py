@@ -170,6 +170,9 @@ def book_slot(court, day, time, browser, hour = False):
         raise AlreadyBooked(get_day_url(day))
     
     WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
+    
+    browser.execute_script('arguments[0].scrollIntoView({block: "center"});', slot)
+    
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable(slot)).click()
     
     #click on the slot which brings up a pop-up
@@ -226,7 +229,7 @@ def get_default_target_date():
     if script_start_date.isocalendar().weekday == 6:
         #29 because the script started on saturday, but want to book when turns midnight and becomes sunday
         target_date = script_start_date + timedelta(days = 29)
-        
+        wait_midnight=True
         #check this is a sunday
         print(f"Target date is {target_date}, on a {weekday_dic[target_date.isocalendar().weekday]}")
         
@@ -234,6 +237,7 @@ def get_default_target_date():
         print('Script started on the Sunday, maybe you loaded a bit late')
         print("Will try and book in 28 days still")
         target_date = script_start_date + timedelta(days = 28)
+        wait_midnight = False
         #check this is a sunday
         if target_date.isocalendar().weekday == 7:
             print(f"Target date is {target_date} on a {weekday_dic[target_date.isocalendar().weekday]}")
@@ -243,7 +247,7 @@ def get_default_target_date():
         raise Exception(f'You have started this script on {weekday_dic[script_start_date.isocalendar().weekday]}. \n You have to specify the date instead.')
         
     #need to return as a string
-    return target_date.strftime("%Y-%m-%d")
+    return target_date.strftime("%Y-%m-%d"), wait_midnight
     
 def main(u, pw, day, court, time, wait_midnight = False):
     """Main script to book the courts with selenium and Firefox/
@@ -269,8 +273,8 @@ def main(u, pw, day, court, time, wait_midnight = False):
     if day == None:
         default = True
         #get the target booking date
-        day = get_default_target_date()
-        wait_midnight = True
+        day, wait_midnight = get_default_target_date()
+        
     
     # keep this condition separate in case you want default day but new court number
     if court == None:    
@@ -340,7 +344,7 @@ def main(u, pw, day, court, time, wait_midnight = False):
     
     sleepytime.sleep(1)
 
-    browser.close()
+    # browser.close()
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
