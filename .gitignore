@@ -1,6 +1,6 @@
 .env
-main.bat
-scheduler_2.py
+*.bat
+*.ipynb
 /__pycache__
 /.vscode
 **/*.txt

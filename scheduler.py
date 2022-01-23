@@ -3,11 +3,7 @@ import datetime
 import argparse
 from settings import USERNAME, PASSWORD
 
-def make_bat(u, pw, day, court):
-    txt = "\"C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe\" \"C:\\Users\\Ronan\\Booking Bot\\Gym-Sign-Up-Bot\\main.py\" \"{}\" \"{}\" \"{}\" {}".format(u, pw, day, court)
-    with open(f'book_{day}_{court}.bat', 'w') as output:
-        output.write(txt)
-
+"""
 def scheduler(u, pw, day, court, st):
     scheduler = win32com.client.Dispatch('Schedule.Service')
     scheduler.Connect()
@@ -52,27 +48,27 @@ def scheduler(u, pw, day, court, st):
     
     return new_task
 
+"""
+def make_bat(u, pw, day, court, time):
+    if day == None:
+        txt = f"\"C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe\" \"C:\\Users\\Ronan\\Booking Bot\\Projects\\Gym-Sign-Up-Bot\\main.py\" \"{u}\" \"{pw}\""
+    if court == None:
+        court  = 3
+    else:
+        txt = f"\"C:\\Users\\Ronan\\Anaconda3\\envs\\browser\\python.exe\" \"C:\\Users\\Ronan\\Booking Bot\\Gym-Sign-Up-Bot\\main.py\" \"{u}\" \"{pw}\" \"-d\" \"{day}\" \"-c\" \"{court}\" \"-t\" \"{time}\""
+    
+    with open(f'book.bat', 'w') as output:
+        output.write(txt)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('u', type=str, help='Username')
     parser.add_argument('pw', type=str, help='Password')
-    parser.add_argument('day',  type=str, help='Date in YYYY-MM-DD format')
-    parser.add_argument('court',  type=int, help='Select the court you want')
-    
+    parser.add_argument('--day', '-d',  type=str, help='Select the day you want to book')
+    parser.add_argument('--court', '-c',  type=int, help='Select the court you want')
+    parser.add_argument('--time', '-t',  type=str, help='Select the time', )
+
     args = parser.parse_args()
-
-    cur_time = datetime.datetime.now()
-        
-    #decide how to handle the day argument too
     
-    #this script will run on Saturday at 23:58
-    #so the booking day is 29 days in the future  
-    booking_day = cur_time + datetime.timedelta(days = 29)
-    #check that booking day matches the user inputted day
-    if booking_day.strftime("%Y-%m-%d") != args.day:
-        raise Exception("Booking and inputted day do not match")
-    
-    start_time = cur_time.replace(hour = 23, minute = 58)
-
-    scheduler(args.u, args.pw, args.day, args.court, start_time)
+    make_bat(args.u, args.pw, args.day, args.court, args.time)
