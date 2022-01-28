@@ -170,7 +170,7 @@ def book_slot(court, day, time, browser, hour = False):
         raise AlreadyBooked(get_day_url(day))
     
     WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
-    
+    #need to scroll so that the cookie policy does not go above the slot
     browser.execute_script('arguments[0].scrollIntoView({block: "center"});', slot)
     
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable(slot)).click()
@@ -197,6 +197,8 @@ def book_slot(court, day, time, browser, hour = False):
 
 def confirm(browser):
     """Clicks the confirm button"""
+    confirm_buttom = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, 'confirm')))
+    browser.execute_script('arguments[0].scrollIntoView({block: "center"});', confirm_buttom)
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, 'confirm'))).click()  
     
 def get_default_target_date():
