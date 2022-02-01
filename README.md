@@ -17,4 +17,12 @@ setx TENNIS_DRIVER_PATH="path to the webdriver"
 5. Book a court by opening a terminal with the correct Python interpreter and typing `python main.py username password`. This will run the default logic that we want, but to specify the date, court and time just pass these arguments in the terminal.
 6. Or make a `.bat` file by running `python scheduler.py username password`. If you double click this .bat file it should open firefox and attempt to book.
 7. Schedule this task with `Task Scheduler` to automate the booking process.
-8. I have commented out the `confirm()` function when testing, make sure you uncomment if you are serious about booking.
+8. use the `--confirm` flag to click the confirm button. Leave this out if you just want to test
+
+Lets say we want to book on "2022-03-03" at "17:00" on Court 3.
+
+```bash
+python main.py username password -d 2022-03-03 -t 17:00 -c 3 --confirm
+```
+
+If you don't specify these flags it will just use the defaults.
