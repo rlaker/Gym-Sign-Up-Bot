@@ -28,7 +28,7 @@ def login(u, pw, browser):
     browser : browser object
     """
     #click the login button
-    WebDriverWait(browser, 5).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
+    WebDriverWait(browser, 10).until(EC.invisibility_of_element_located((By.CLASS_NAME,"ajax-wrapper")))
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, "Login"))).click()
     
     sleepytime.sleep(0.2)
@@ -195,7 +195,7 @@ def book_slot(court, day, time, browser, hour = False):
     WebDriverWait(browser, 5).until(EC.element_to_be_clickable(popup.find_element(By.ID, "submit-booking"))).click()
     
 
-def confirm(browser):
+def click_confirm(browser):
     """Clicks the confirm button"""
     confirm_buttom = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, 'confirm')))
     browser.execute_script('arguments[0].scrollIntoView({block: "center"});', confirm_buttom)
@@ -251,7 +251,7 @@ def get_default_target_date():
     #need to return as a string
     return target_date.strftime("%Y-%m-%d"), wait_midnight
     
-def main(u, pw, day, court, time, wait_midnight = False):
+def main(u, pw, day, court, time, confirm, wait_midnight = False):
     """Main script to book the courts with selenium and Firefox/
 
     Parameters
@@ -323,7 +323,8 @@ def main(u, pw, day, court, time, wait_midnight = False):
         
         #make sure you comment this line out when testing
         #confirm the booking, without pressing it wont book
-        #confirm(browser)
+        if confirm:
+            click_confirm(browser)
     except:
         browser.close()
         raise Exception("failed to book")
@@ -335,7 +336,8 @@ def main(u, pw, day, court, time, wait_midnight = False):
             
             #make sure you comment this line out when testing
             #confirm the booking, without pressing it wont book
-            #confirm(browser)
+            if confirm:
+                click_confirm(browser)
         except:
             browser.close()
             raise Exception("failed to book")
@@ -348,6 +350,17 @@ def main(u, pw, day, court, time, wait_midnight = False):
 
     # browser.close()
     
+def str2bool(v):
+    # taken from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -356,10 +369,12 @@ if __name__ == "__main__":
     parser.add_argument('--day', '-d',  type=str, help='Select the day you want to book')
     parser.add_argument('--court', '-c',  type=int, help='Select the court you want')
     parser.add_argument('--time', '-t',  type=str, help='Select the time', )
+    parser.add_argument('--confirm',  type=str2bool, nargs='?',
+                        const=True, default=False, help='Whether to click confirm', )
 
     args = parser.parse_args()
 
-    main(args.u, args.pw, args.day, args.court, args.time)
+    main(args.u, args.pw, args.day, args.court, args.time, args.confirm)
 
 
 
