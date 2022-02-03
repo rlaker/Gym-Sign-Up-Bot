@@ -5,12 +5,13 @@ import io
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from settings import DRIVER_PATH, URL
+from settings import DRIVER_PATH, URL, TENNIS_EMAIL_SENDER
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.common import exceptions as exc
 from selenium.webdriver.firefox.service import Service  
+import yagmail
 
 def get_day_url(day):
     """returns the url for the right day"""
@@ -251,6 +252,25 @@ def get_default_target_date():
     #need to return as a string
     return target_date.strftime("%Y-%m-%d"), wait_midnight
     
+def send_email(u, day, court, time, condition = "success"):
+    """Sends email to confirm the booking by this bot
+
+    Just send if a success for now
+    """
+    # follow Yagmail documentation to save password to keyring
+    yag = yagmail.SMTP(TENNIS_EMAIL_SENDER)
+    
+    if condition == 'success':
+        contents = [
+            f"Python has booked Court {court} at {time} on {day}",
+            f'<a href="{get_day_url(day)}">Check for yourself!</a>']
+        outcome = 'SUCCESS'
+    else:
+        raise Exception("Condition doesn't match what I expected")
+    
+    yag.send(u, f'[{outcome}] Court {court} at {time} on {day}', contents)
+    print("[SENT] Sent the confirmation email")
+    
 def main(u, pw, day, court, time, confirm, wait_midnight = False):
     """Main script to book the courts with selenium and Firefox/
 
@@ -325,6 +345,9 @@ def main(u, pw, day, court, time, confirm, wait_midnight = False):
         #confirm the booking, without pressing it wont book
         if confirm:
             click_confirm(browser)
+        #INDENT if you don't want to send emails when testing
+        if TENNIS_EMAIL_SENDER != None:
+            send_email(u, day, court, time)
     except:
         browser.close()
         raise Exception("failed to book")
