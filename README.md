@@ -9,8 +9,8 @@ Following this [blog post](https://tmonty.tech/create-an-automated-web-bot-with-
 3. Add these variables to your environment (with windows this is setx VARIABLE_NAME=VARIABLE_VALUE). This method will use Windows task scheduler to rerun a .bat file, so we need to add these variables to the command prompt. Need to use `setx` not `set` as we need the variables to persist to all future command prompts.
 
 ```bat
-setx TENNIS_URL="The base url if you tried to book a court today"
-setx TENNIS_DRIVER_PATH="path to the webdriver"
+setx TENNIS_URL "The base url if you tried to book a court today"
+setx TENNIS_DRIVER_PATH "path to the webdriver"
 ```
 
 4. Install python packages with `pip install requirements.txt`
