@@ -18,13 +18,13 @@ setx TENNIS_DRIVER_PATH "path to the webdriver"
 
 # Schedule a tasks on Windows
 
-Lets say we want to book on "2022-03-03" at "17:00" on Court 3. We could type this into the command line, and it would run. 
+Lets say we want to book on "2022-03-03" at "17:00" on Court 3. We could type this into the command line, and it would run.
 
 ```bash
 python main.py username password -d 2022-03-03 -t 17:00 -c 3 --confirm
 ```
 
-But we want to wait until just before midnight, so that we can book the courts as soon as they are available. 
+But we want to wait until just before midnight, so that we can book the courts as soon as they are available.
 
 1. So we will copy this commands into a `.bat` file and save it as "book.bat"
    1. If you double click this .bat file it should open Firefox and attempt to book.
