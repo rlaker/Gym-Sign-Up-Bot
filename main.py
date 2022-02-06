@@ -1,4 +1,5 @@
 import argparse
+import logging
 import time as sleepytime
 from datetime import datetime, timedelta
 
@@ -117,6 +118,7 @@ class AlreadyBooked(Exception):
 
     def __init__(self, max_refresh):
         self.max_refresh = max_refresh
+        logging.info("Already Booked")
 
     def __str__(self):
         return f"Still not available after refreshing {self.max_refresh} times"
@@ -127,6 +129,7 @@ class Unavailable(Exception):
 
     def __init__(self, max_refresh):
         self.max_refresh = max_refresh
+        logging.info("Unavailable")
 
     def __str__(self):
         return f"Already booked!\nGo and check: {self.url}"
@@ -341,6 +344,7 @@ def send_email(u, day, court, time, condition="success"):
         f"[{outcome}] Court {court} at {time} on {day}",
         contents,
     )
+    logging.info("[SENT] Sent the confirmation email")
     print("[SENT] Sent the confirmation email")
 
 
@@ -378,6 +382,7 @@ def main(u, pw, day, court, time, confirm, wait_midnight=False):
         time = "10:00"
 
     print(f"[STARTING] Signing up for court {court} at {time} on {day}")
+    logging.info(f"[STARTING] Signing up for court {court} at {time} on {day}")
 
     # start the firefox browser
     # takes a  few seconds
@@ -396,9 +401,11 @@ def main(u, pw, day, court, time, confirm, wait_midnight=False):
         time = datetime.now()
         counter = 0
         print(f"Started waiting at {time}")
+        logging.info(f"Started waiting at {time}")
         while time < tomorrow:  # start of the next day
             if counter == 10:
                 print(f"Time is {time}, waiting until {tomorrow}")
+                logging.info(f"Time is {time}, waiting until {tomorrow}")
                 counter = 0
 
             time = datetime.now()
@@ -438,8 +445,10 @@ def main(u, pw, day, court, time, confirm, wait_midnight=False):
             raise Exception("failed to book")
 
     print(f"[SUCCESS] Signed up for court {court}")
+    logging.info(f"[SUCCESS] Signed up for court {court}")
 
     print("[INFO] Closing Browser in 10 seconds")
+    logging.info("[INFO] Closing Browser in 10 seconds")
     sleepytime.sleep(10)
     browser.close()
 
@@ -457,6 +466,9 @@ def str2bool(v):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(filename="book.log", level=logging.INFO)
+    logging.info(f"Started booking program at {datetime.now()}")
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("u", type=str, help="Username")
