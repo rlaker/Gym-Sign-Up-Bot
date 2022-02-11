@@ -32,29 +32,46 @@ def login(u, pw, browser):
     browser : browser object
     """
     # click the login button
-    WebDriverWait(browser, 10).until(
+    WebDriverWait(browser, 30).until(
         EC.invisibility_of_element_located((By.CLASS_NAME, "ajax-wrapper"))
     )
     WebDriverWait(browser, 5).until(
         EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, "Login"))
     ).click()
-
-    sleepytime.sleep(0.2)
+    sleepytime.sleep(0.5)
     # find the username and password box
+    # username = WebDriverWait(browser, 15).until(
+    #     EC.element_to_be_clickable((By.NAME, "EmailAddress"))
+    # )
+    # password = browser.find_element(By.NAME, "Password")
+    # browser.find_element(By.ID, "signin-btn").click()
+
+    # ! they changed to only accept LTA logins now
+    # need to click another button
+    WebDriverWait(browser, 5).until(
+        EC.element_to_be_clickable((By.CLASS_NAME, "lta"))
+    ).click()
+
+    # new username input
     username = WebDriverWait(browser, 5).until(
-        EC.element_to_be_clickable((By.NAME, "EmailAddress"))
+        EC.element_to_be_clickable((By.XPATH, f"//input[@placeholder='Username']"))
     )
+
     username_str = u
     # send the username str
     username.send_keys(username_str)
 
     # find the password element
-    password = browser.find_element(By.NAME, "Password")
+    password = WebDriverWait(browser, 5).until(
+        EC.element_to_be_clickable((By.XPATH, f"//input[@type='password']"))
+    )
     password_str = pw
     password.send_keys(password_str)
 
     # click the sign in button
-    browser.find_element(By.ID, "signin-btn").click()
+    WebDriverWait(browser, 5).until(
+        EC.element_to_be_clickable((By.XPATH, f"//button[@title='Login']"))
+    ).click()
 
 
 def convert_time_to_id(time="10:00"):
@@ -152,6 +169,14 @@ def book_slot(court, day, time, browser, hour=False):
         If True will book court for an hour, by default False
 
     """
+    # now that it does the LTA thing I need to wait for the page to load,
+    # otherwise it doesn't remember me
+    # this waits until it can see a court object
+    court_obj = WebDriverWait(browser, 5).until(
+        EC.element_to_be_clickable(
+            (By.XPATH, f"//div[@data-resource-name='Court {court}']")
+        )
+    )
 
     # Go to the correct date url
     browser.get(get_day_url(day))
@@ -321,7 +346,7 @@ def get_default_target_date():
     return target_date.strftime("%Y-%m-%d"), wait_midnight
 
 
-def send_email(u, day, court, time, condition="success"):
+def send_email(email, day, court, time, condition="success"):
     """Sends email to confirm the booking by this bot
 
     Just send if a success for now
@@ -338,17 +363,12 @@ def send_email(u, day, court, time, condition="success"):
     else:
         raise Exception("Condition doesn't match what I expected")
 
-    yag.send(u, f"[{outcome}] Court {court} at {time} on {day}", contents)
-    yag.send(
-        "ronan.laker@gmail.com",
-        f"[{outcome}] Court {court} at {time} on {day}",
-        contents,
-    )
+    yag.send(email, f"[{outcome}] Court {court} at {time} on {day}", contents)
     logging.info("[SENT] Sent the confirmation email")
     print("[SENT] Sent the confirmation email")
 
 
-def main(u, pw, day, court, time, confirm, wait_midnight=False):
+def main(u, pw, day, court, time, confirm, email, wait_midnight=False):
     """Main script to book the courts with selenium and Firefox/
 
     Parameters
@@ -376,7 +396,7 @@ def main(u, pw, day, court, time, confirm, wait_midnight=False):
 
     # keep this condition separate in case you want default day but new court number
     if court is None:
-        court = 3
+        court = 4
 
     if time is None:
         time = "10:00"
@@ -424,9 +444,7 @@ def main(u, pw, day, court, time, confirm, wait_midnight=False):
         # confirm the booking, without pressing it wont book
         if confirm:
             click_confirm(browser)
-        # INDENT if you don't want to send emails when testing
-        if TENNIS_EMAIL_SENDER is not None:
-            send_email(u, day, court, time)
+
     except:
         browser.close()
         raise Exception("failed to book")
@@ -445,6 +463,9 @@ def main(u, pw, day, court, time, confirm, wait_midnight=False):
             raise Exception("failed to book")
 
     print(f"[SUCCESS] Signed up for court {court}")
+    # COMMENT if you don't want to send emails when testing
+    if TENNIS_EMAIL_SENDER is not None:
+        send_email(email, day, court, time)
     logging.info(f"[SUCCESS] Signed up for court {court}")
 
     print("[INFO] Closing Browser in 10 seconds")
@@ -489,7 +510,10 @@ if __name__ == "__main__":
         default=False,
         help="Whether to click confirm",
     )
+    parser.add_argument(
+        "--email", "-e", type=str, help="Email to send confirmation email"
+    )
 
     args = parser.parse_args()
 
-    main(args.u, args.pw, args.day, args.court, args.time, args.confirm)
+    main(args.u, args.pw, args.day, args.court, args.time, args.confirm, args.email)
