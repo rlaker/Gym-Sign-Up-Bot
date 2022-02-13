@@ -140,12 +140,12 @@ def is_slot_bookable(slot):
 class AlreadyBooked(Exception):
     """Class for case when court is already booked"""
 
-    def __init__(self, max_refresh):
-        self.max_refresh = max_refresh
-        logging.info("Already Booked")
+    def __init__(self, url):
+        self.url = url
+        logging.info(f"Already Booked: {self.url}")
 
     def __str__(self):
-        return f"Still not available after refreshing {self.max_refresh} times"
+        return f"Already booked!\nGo and check: {self.url}"
 
 
 class Unavailable(Exception):
@@ -153,10 +153,10 @@ class Unavailable(Exception):
 
     def __init__(self, max_refresh):
         self.max_refresh = max_refresh
-        logging.info("Unavailable")
+        logging.info(f"Unavailable")
 
     def __str__(self):
-        return f"Already booked!\nGo and check: {self.url}"
+        return f"Still not available after refreshing {self.max_refresh} times"
 
 
 def book_slot(court, day, time, browser, hour=False):
