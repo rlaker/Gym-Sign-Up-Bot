@@ -12,7 +12,7 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from settings import DRIVER_PATH, TENNIS_EMAIL_SENDER, URL
+from settings import DRIVER_PATH, TENNIS_EMAIL_SENDER, TENNIS_TEST_EMAIL, URL
 
 
 def get_day_url(day):
@@ -72,6 +72,13 @@ def login(u, pw, browser):
     WebDriverWait(browser, 5).until(
         EC.element_to_be_clickable((By.XPATH, f"//button[@title='Login']"))
     ).click()
+
+    # now that it does the LTA thing I need to wait for the page to load,
+    # otherwise it doesn't remember me
+    # this waits until it can see a court object
+    court_obj = WebDriverWait(browser, 5).until(
+        EC.element_to_be_clickable((By.XPATH, f"//div[@data-resource-name='Court 1']"))
+    )
 
 
 def convert_time_to_id(time="10:00"):
@@ -169,14 +176,7 @@ def book_slot(court, day, time, browser, hour=False):
         If True will book court for an hour, by default False
 
     """
-    # now that it does the LTA thing I need to wait for the page to load,
-    # otherwise it doesn't remember me
-    # this waits until it can see a court object
-    court_obj = WebDriverWait(browser, 5).until(
-        EC.element_to_be_clickable(
-            (By.XPATH, f"//div[@data-resource-name='Court {court}']")
-        )
-    )
+    logging.info(f"Booking slot {time} for court {court}")
 
     # Go to the correct date url
     browser.get(get_day_url(day))
@@ -300,7 +300,6 @@ def get_default_target_date():
     Exception
         If target day is not a Sunday
     """
-
     weekday_dic = {
         1: "Monday",
         2: "Tuesday",
@@ -364,6 +363,9 @@ def send_email(email, day, court, time, condition="success"):
         raise Exception("Condition doesn't match what I expected")
 
     yag.send(email, f"[{outcome}] Court {court} at {time} on {day}", contents)
+    yag.send(
+        TENNIS_TEST_EMAIL, f"[{outcome}] Court {court} at {time} on {day}", contents
+    )
     logging.info("[SENT] Sent the confirmation email")
     print("[SENT] Sent the confirmation email")
 
@@ -449,6 +451,7 @@ def main(u, pw, day, court, time, confirm, email, wait_midnight=False):
         browser.close()
         raise Exception("failed to book")
 
+    sleepytime.sleep(1)
     # by default we want to book another half an hour from 11:00 to 11:30
     if default:
         try:
