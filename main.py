@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.common import exceptions as exc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -271,6 +272,8 @@ def book_slot(court, day, time, browser, hour=False):
         EC.element_to_be_clickable(popup.find_element(By.ID, "submit-booking"))
     ).click()
 
+    logging.info("End of book_slot")
+
 
 def click_confirm(browser):
     """Clicks the confirm button"""
@@ -370,7 +373,7 @@ def send_email(email, day, court, time, condition="success"):
     print("[SENT] Sent the confirmation email")
 
 
-def main(u, pw, day, court, time, confirm, email, wait_midnight=False):
+def main(u, pw, day, court, time, confirm, email, wait_midnight=False, headless=False):
     """Main script to book the courts with selenium and Firefox/
 
     Parameters
@@ -408,12 +411,27 @@ def main(u, pw, day, court, time, confirm, email, wait_midnight=False):
 
     # start the firefox browser
     # takes a  few seconds
-    browser = webdriver.Firefox(service=Service(DRIVER_PATH))
-    browser.get(URL)
+    logging.info(f"Trying to load the browser at {datetime.now()}")
+    try:
+        if headless:
+            # run in headless mode
+            options = Options()
+            options.headless = True
+            browser = webdriver.Firefox(service=Service(DRIVER_PATH), options=options)
+        else:
+            browser = webdriver.Firefox(service=Service(DRIVER_PATH))
+        browser.get(URL)
+    except Exception as exc:
+        logging.info("Failed to open the browser")
+        logging.info(str(exc))
 
     # login to the page before midnight, so we are ready to go
-    login(u, pw, browser)
-
+    logging.info(f"Logging in at {datetime.now()}")
+    try:
+        login(u, pw, browser)
+    except Exception as exc:
+        logging.info("Failed to log in")
+        logging.info(str(exc))
     # waits until midnight has passed
     if wait_midnight:
         now = datetime.now()
@@ -445,6 +463,7 @@ def main(u, pw, day, court, time, confirm, email, wait_midnight=False):
         # make sure you comment this line out when testing
         # confirm the booking, without pressing it wont book
         if confirm:
+            logging.info("Clicking confirm")
             click_confirm(browser)
 
     except:
@@ -516,7 +535,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--email", "-e", type=str, help="Email to send confirmation email"
     )
-
+    parser.add_argument(
+        "--headless",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Whether to run in headless mode",
+    )
     args = parser.parse_args()
 
-    main(args.u, args.pw, args.day, args.court, args.time, args.confirm, args.email)
+    main(
+        args.u,
+        args.pw,
+        args.day,
+        args.court,
+        args.time,
+        args.confirm,
+        args.email,
+        headless=args.headless,
+    )

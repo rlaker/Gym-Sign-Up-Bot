@@ -1,4 +1,8 @@
 repos:
+-   repo: https://github.com/ambv/black
+    rev: 22.1.0
+    hooks:
+    -   id: black
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.1
     hooks:
@@ -33,10 +37,6 @@ repos:
     -   id: mixed-line-ending
         exclude_types: ["jupyter"]
         args: [--fix=lf]
--   repo: https://github.com/ambv/black
-    rev: 22.1.0
-    hooks:
-    - id: black
 # this is good but fails with metaclasses
 # so just run everynow and then
 # -   repo: https://github.com/asottile/dead
