@@ -438,17 +438,17 @@ def main(u, pw, day, court, time, confirm, email, wait_midnight=False, headless=
         tomorrow = datetime(now.year, now.month, now.day + 1)
 
         # wait until midnight
-        time = datetime.now()
+        code_time = datetime.now()
         counter = 0
-        print(f"Started waiting at {time}")
-        logging.info(f"Started waiting at {time}")
-        while time < tomorrow:  # start of the next day
+        print(f"Started waiting at {code_time}")
+        logging.info(f"Started waiting at {code_time}")
+        while code_time < tomorrow:  # start of the next day
             if counter == 10:
-                print(f"Time is {time}, waiting until {tomorrow}")
-                logging.info(f"Time is {time}, waiting until {tomorrow}")
+                print(f"Time is {code_time}, waiting until {tomorrow}")
+                logging.info(f"Time is {code_time}, waiting until {tomorrow}")
                 counter = 0
 
-            time = datetime.now()
+            code_time = datetime.now()
             sleepytime.sleep(0.5)
             counter += 1
 
